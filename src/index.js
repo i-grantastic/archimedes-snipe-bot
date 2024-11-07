@@ -129,6 +129,13 @@ client.on('messageCreate', async (message) => {
         // Secondary sort by sniper points (ascending)
         return a.sniper - b.sniper;
       });
+    } else if (sortType === 'kd') {
+      sortedUsers = Object.entries(userPoints).sort(([, a], [, b]) => {
+        // primary sort by sniper points (descending)
+        if (b.sniper/b.sniped !== a.sniper/a.sniped) return b.sniper/b.sniped - a.sniper/a.sniped;
+        // secondary sort by sniped points (ascending)
+        return b.sniper - a.sniper;
+      });
     } else {
       sortedUsers = Object.entries(userPoints).sort(([, a], [, b]) => {
         // primary sort by sniper points (descending)
@@ -143,6 +150,7 @@ client.on('messageCreate', async (message) => {
     // generate the leaderboard table
     let leaderboard = '# Leaderboard\n';
     if (sortType === 'sniped') {leaderboard += '**Filter: Most sniped**\n\n'};
+    if (sortType === 'kd') {leaderboard += '**Filter: Highest K/D**\n\n'};
     if (sortType === 'teams' || sortType === 'team') {
       leaderboard += '**Filter: Teams**\n\n'
       leaderboard += '**Team  •  Sniper  •  Sniped  •  K/D**\n';
@@ -178,7 +186,7 @@ client.on('messageCreate', async (message) => {
 
   // if there is an image and no tagged user, send a response
   if (hasImage && hasNoTaggedUser) {
-    message.reply('⚠️ Was that a snipe? For a snipe to be counted, resend the photo with the tagged user in the same message.');
+    message.reply('⚠️ Was that a snipe? For a snipe to be counted, edit your message to include the tagged user in the same message.');
   }
 });
 
