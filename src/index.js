@@ -8,7 +8,7 @@ const startDate = new Date('2024-11-06T18:40:00-05:00'); // -5:00 for EST, start
 // initialize point tracking object
 const userPoints = {};
 
-// helper function to increment points
+// function to increment points
 function incrementPoints(userId, type) {
   if (!userPoints[userId]) {
     userPoints[userId] = { sniper: 0, sniped: 0 };
@@ -16,16 +16,17 @@ function incrementPoints(userId, type) {
   userPoints[userId][type]++;
 }
 
-// helper function to calculate k/d ratio
+// function to calculate k/d ratio
 function calculateKD(sniper, sniped) {
   if (sniped === 0) {
-    return 'U'
+    return 'UD'
   } else {
     kd = sniper/sniped;
     return kd.toFixed(2);
   }
 }
 
+// settings to include
 const client = new Client({
   intents: [
     IntentsBitField.Flags.Guilds,
@@ -35,6 +36,7 @@ const client = new Client({
   ]
 })
 
+// activate bot
 client.on('ready', (c) => {
   console.log(`🟢 ${c.user.tag} online.`)
 
@@ -44,6 +46,7 @@ client.on('ready', (c) => {
   })
 })
 
+// command listener
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
@@ -56,7 +59,7 @@ client.on('messageCreate', async (message) => {
       .addFields(
         {
           name: '\u200B\nCounting your snipe',
-          value: 'Send an image and tag the sniped member *in the same message.* If the tag and image are *not* in the same message, it will *not* be counted! If this happens, *delete then resend* the corrected version.'
+          value: 'Send an image and tag the sniped member *in the same message.*'
         },
         {
           name: '\u200B\nRules',
@@ -120,9 +123,19 @@ client.on('messageCreate', async (message) => {
     // sort based on the command
     let sortedUsers;
     if (sortType === 'sniped') {
-      sortedUsers = Object.entries(userPoints).sort(([, a], [, b]) => b.sniped - a.sniped);
+      sortedUsers = Object.entries(userPoints).sort(([, a], [, b]) => {
+        // Primary sort by sniped points (descending)
+        if (b.sniped !== a.sniped) return b.sniped - a.sniped;
+        // Secondary sort by sniper points (ascending)
+        return a.sniper - b.sniper;
+      });
     } else {
-      sortedUsers = Object.entries(userPoints).sort(([, a], [, b]) => b.sniper - a.sniper);
+      sortedUsers = Object.entries(userPoints).sort(([, a], [, b]) => {
+        // primary sort by sniper points (descending)
+        if (b.sniper !== a.sniper) return b.sniper - a.sniper;
+        // secondary sort by sniped points (ascending)
+        return a.sniped - b.sniped;
+      });
     }
 
     if (sortType !== 'all') { sortedUsers = sortedUsers.slice(0, 10) }
@@ -149,6 +162,25 @@ client.on('messageCreate', async (message) => {
     notice.delete();
   }
 })
+
+// listen for images without tag
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
+  if (message.channel.id !== channelId) return;
+
+  // check if the message contains an image (attachment or embed)
+  const hasImage = message.attachments.some(attachment => 
+    attachment.contentType && attachment.contentType.startsWith('image')
+  ) || message.embeds.some(embed => embed.image || embed.thumbnail);
+
+  // check if there are no tagged users
+  const hasNoTaggedUser = message.mentions.users.size === 0;
+
+  // if there is an image and no tagged user, send a response
+  if (hasImage && hasNoTaggedUser) {
+    message.reply('⚠️ Was that a snipe? For a snipe to be counted, resend the photo with the tagged user in the same message.');
+  }
+});
 
 // enable bot by entering nodemon in the terminal
 client.login(process.env.TOKEN)
