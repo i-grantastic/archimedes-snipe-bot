@@ -190,5 +190,40 @@ client.on('messageCreate', async (message) => {
   }
 });
 
+// listen for streaks
+let currentStreakUser = null; // ID of the user currently on a streak
+let currentStreakCount = 0; // count of the current streak
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
+
+  // check if the message is in the specific channel
+  if (message.channel.id !== channelId) return;
+
+  // check if the message contains an image (attachment or embed)
+  const hasImage = message.attachments.some(attachment => 
+    attachment.contentType && attachment.contentType.startsWith('image')
+  ) || message.embeds.some(embed => embed.image || embed.thumbnail);
+
+  // check if there is a tagged user
+  const hasTaggedUser = message.mentions.users.size > 0;
+
+  // if there is an image and a tagged user, check for streak
+  if (hasImage && hasTaggedUser) {
+    if (message.author.id === currentStreakUser) {
+      // if the same user, increment the streak count and send a message
+      currentStreakCount++;
+      message.channel.send(`🔥 ${message.author} is on a ${currentStreakCount}x streak`);
+    } else {
+      // if a new user, reset the streak count
+      currentStreakUser = message.author.id;
+      currentStreakCount = 1;
+    }
+  } else {
+    // reset streak if a non-qualifying message breaks it
+    currentStreakUser = null;
+    currentStreakCount = 0;
+  }
+});
+
 // enable bot by entering nodemon in the terminal
 client.login(process.env.TOKEN)
