@@ -218,10 +218,6 @@ client.on('messageCreate', async (message) => {
       currentStreakUser = message.author.id;
       currentStreakCount = 1;
     }
-  } else {
-    // reset streak if a non-qualifying message breaks it
-    currentStreakUser = null;
-    currentStreakCount = 0;
   }
 });
 
