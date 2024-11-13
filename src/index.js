@@ -242,11 +242,11 @@ const sourceChannelId = '1306105955854975016'; // input channel
 const targetChannelId = channelId; // output channel
 
 client.on('messageCreate', async (message) => {
-  // Check if the message is from you in the specified source channel
-  if (message.channel.id === sourceChannelId && message.author.id === 'YOUR_USER_ID') {
-    const targetChannel = await client.channels.fetch(targetChannelId); // Fetch the target channel
+  // check if the message is from you in the specified source channel
+  if (message.channel.id === sourceChannelId) {
+    const targetChannel = await client.channels.fetch(targetChannelId); // fetch the target channel
     if (targetChannel) {
-      targetChannel.send(message.content); // Forward the message content to the target channel
+      targetChannel.send(message.content); // forward the message content to the target channel
     }
   }
 });
