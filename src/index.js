@@ -192,52 +192,6 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-// listen for 15 minute limit
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
-  if (message.channel.id !== channelId) return;
-
-  // check if the message contains an image (attachment or embed)
-  const hasImage = message.attachments.some(attachment => 
-    attachment.contentType && attachment.contentType.startsWith('image')
-  ) || message.embeds.some(embed => embed.image || embed.thumbnail);
-
-  // check if there is a tagged user
-  const hasTaggedUser = message.mentions.users.size > 0;
-
-  // if the message contains an image and a tagged user, proceed
-  if (hasImage && hasTaggedUser) {
-    const taggedUsers = message.mentions.users.map(user => user.id);
-
-    // define the timestamp for 15 minutes ago
-    const fifteenMinutesAgo = Date.now() - (15 * 60 * 1000); // 15 minutes in milliseconds
-
-    try {
-      // fetch up to 100 recent messages from the channel
-      const recentMessages = await message.channel.messages.fetch({ limit: 100 });
-      
-      // filter messages within the last 15 minutes with the same sender and at least one tagged user in common
-      const foundMatch = recentMessages.some(msg => {
-        return (
-          msg.author.id === message.author.id &&                // same author
-          msg.createdTimestamp >= fifteenMinutesAgo &&          // within 15 minutes
-          (msg.attachments.some(att => att.contentType && att.contentType.startsWith('image')) || 
-           msg.embeds.some(embed => embed.image || embed.thumbnail)) && // has an image
-          msg.mentions.users.some(user => taggedUsers.includes(user.id)) // has same tagged user
-        );
-      });
-
-      if (foundMatch) {
-        message.reply("⏰ Slow down! You've already sniped this person within 15 minutes.");
-        await message.delete();
-      }
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      message.reply("❌ An error occurred!");
-    }
-  }
-});
-
 // message forwarding
 const sourceChannelId = '1306105955854975016'; // input channel
 const targetChannelId = channelId; // output channel
