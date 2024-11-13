@@ -159,9 +159,10 @@ client.on('messageCreate', async (message) => {
     };
     
     const medals = ['🥇', '🥈', '🥉'];
+    const guild = message.guild;
 
     for (const [index, [userId, points]] of sortedUsers.entries()) {
-      const user = await client.users.fetch(userId);
+      const user = await guild.members.fetch(userId);
       const medal = medals[index] || `(${index+1}) `;
       leaderboard += `${medal} ${user.displayName}  •  ${points.sniper}  •  ${points.sniped}  •  ${calculateKD(points.sniper, points.sniped)}\n`;
     };
