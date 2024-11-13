@@ -190,14 +190,12 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-// listen for streaks
-let currentStreakUser = null; // ID of the user currently on a streak
-let currentStreakCount = 0; // count of the current streak
+// listen for 15 minute limit
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
   // check if the message is in the specific channel
-  if (message.channel.id !== channelId) return;
+  if (message.channel.id !== streakChannelId) return;
 
   // check if the message contains an image (attachment or embed)
   const hasImage = message.attachments.some(attachment => 
@@ -207,16 +205,48 @@ client.on('messageCreate', async (message) => {
   // check if there is a tagged user
   const hasTaggedUser = message.mentions.users.size > 0;
 
-  // if there is an image and a tagged user, check for streak
+  // if the message contains an image and a tagged user, proceed
   if (hasImage && hasTaggedUser) {
-    if (message.author.id === currentStreakUser) {
-      // if the same user, increment the streak count and send a message
-      currentStreakCount++;
-      message.channel.send(`🔥 ${message.author} is on a ${currentStreakCount}x streak`);
-    } else {
-      // if a new user, reset the streak count
-      currentStreakUser = message.author.id;
-      currentStreakCount = 1;
+    const taggedUsers = message.mentions.users.map(user => user.id);
+
+    // define the timestamp for 15 minutes ago
+    const fifteenMinutesAgo = Date.now() - (15 * 60 * 1000); // 15 minutes in milliseconds
+
+    try {
+      // fetch up to 100 recent messages from the channel
+      const recentMessages = await message.channel.messages.fetch({ limit: 100 });
+      
+      // filter messages within the last 15 minutes with the same sender and at least one tagged user in common
+      const foundMatch = recentMessages.some(msg => {
+        return (
+          msg.author.id === message.author.id &&                // same author
+          msg.createdTimestamp >= fifteenMinutesAgo &&          // within 15 minutes
+          (msg.attachments.some(att => att.contentType && att.contentType.startsWith('image')) || 
+           msg.embeds.some(embed => embed.image || embed.thumbnail)) && // has an image
+          msg.mentions.users.some(user => taggedUsers.includes(user.id)) // has same tagged user
+        );
+      });
+
+      if (foundMatch) {
+        message.reply("⏰ Slow down! You've already sniped this person within 15 minutes.");
+        await message.delete();
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      message.reply("❌ An error occurred!");
+    }
+  }
+});
+
+const sourceChannelId = '1306105955854975016'; // input channel
+const targetChannelId = channelId; // output channel
+
+client.on('messageCreate', async (message) => {
+  // Check if the message is from you in the specified source channel
+  if (message.channel.id === sourceChannelId && message.author.id === 'YOUR_USER_ID') {
+    const targetChannel = await client.channels.fetch(targetChannelId); // Fetch the target channel
+    if (targetChannel) {
+      targetChannel.send(message.content); // Forward the message content to the target channel
     }
   }
 });
