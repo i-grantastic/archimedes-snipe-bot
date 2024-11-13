@@ -240,11 +240,22 @@ client.on('messageCreate', async (message) => {
 const sourceChannelId = '1306105955854975016'; // input channel
 const targetChannelId = channelId; // output channel
 client.on('messageCreate', async (message) => {
-  // check if the message is from you in the specified source channel
-  if (message.channel.id === sourceChannelId) {
-    const targetChannel = await client.channels.fetch(targetChannelId); // fetch the target channel
-    console.log(message.content); // log to console
-    targetChannel.send(message.content); // forward the message content to the target channel
+  if (message.author.bot) return;
+  if (message.channel.id !== sourceChannelId) return;
+
+  const targetChannel = await client.channels.fetch(targetChannelId);
+  if (!targetChannel) return;
+
+  // forward the message content, if any
+  if (message.content) {
+    targetChannel.send(message.content);
+  }
+
+  // forward attachments (images or other files), if any
+  if (message.attachments.size > 0) {
+    message.attachments.forEach((attachment) => {
+      targetChannel.send({ files: [attachment.url] });
+    });
   }
 });
 
