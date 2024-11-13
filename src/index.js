@@ -193,9 +193,7 @@ client.on('messageCreate', async (message) => {
 // listen for 15 minute limit
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-
-  // check if the message is in the specific channel
-  if (message.channel.id !== streakChannelId) return;
+  if (message.channel.id !== channelId) return;
 
   // check if the message contains an image (attachment or embed)
   const hasImage = message.attachments.some(attachment => 
