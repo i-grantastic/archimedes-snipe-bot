@@ -2,7 +2,8 @@ require('dotenv').config()
 const { Client, IntentsBitField, ActivityType, EmbedBuilder } = require('discord.js')
 
 // inputs
-const channelId = '1169317299237433475'; // channel to read
+const channelId = '1169317299237433475'; // snipe channel ID
+const guildId = '1099834703130935296'; // archimedes server ID
 const startDate = new Date('2024-11-06T18:40:00-05:00'); // -5:00 for EST, start from this date
 
 // initialize point tracking object
@@ -159,7 +160,7 @@ client.on('messageCreate', async (message) => {
     };
     
     const medals = ['🥇', '🥈', '🥉'];
-    const guild = message.guild;
+    const guild = await client.guilds.fetch(guildId);
 
     for (const [index, [userId, points]] of sortedUsers.entries()) {
       const user = await guild.members.fetch(userId);
