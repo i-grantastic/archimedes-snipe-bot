@@ -158,7 +158,7 @@ client.on('messageCreate', async (message) => {
 
     const leaderboardEmbed = new EmbedBuilder()
       .setColor('#ffc800')
-      .setTitle('Leaderboard')
+      .setTitle('# Leaderboard')
 
     for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
       const user = await guild.members.fetch(userId);
@@ -166,7 +166,7 @@ client.on('messageCreate', async (message) => {
       leaderboardEmbed.addFields({
         name: `${medal} ${user.displayName}`,
         value: `📸 ${points.sniper}  🎯 ${points.sniped}  (${calculateKD(points.sniper, points.sniped)} K/D)`,
-        inline: false
+        inline: true
       });
     }
 
