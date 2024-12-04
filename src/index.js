@@ -157,16 +157,25 @@ client.on('messageCreate', async (message) => {
     const medals = ['🥇', '🥈', '🥉'];
 
     const embed = new EmbedBuilder()
-      .setColor('#ffc800')
-      .setTitle('!leaderboard');
-
+    .setColor('#0099ff')
+    .setTitle('Leaderboard');
+  
+    // Build the leaderboard description dynamically
     let leaderboardDescription = '';
+    
     for (const [index, [userId, points]] of sortedUsers.entries()) {
-      const user = await guild.members.fetch(userId);
-      const medal = medals[index] || `(${index+1}) `;
-      const shortName = user.displayName.split(' ')[0];
+      const user = await guild.members.fetch(userId); // Fetch the user
+      const medal = medals[index] || `(${index + 1}) `;
+      const shortName = user.displayName.split(' ')[0];  // Get the first word of the user's name to shorten it
+    
       leaderboardDescription += `**${medal} ${shortName}:** ${points.sniper} / ${points.sniped} = ${calculateKD(points.sniper, points.sniped)}\n`;
     }
+    
+    // Check if the description is too long, if so, truncate it
+    if (leaderboardDescription.length > 2048) {
+      leaderboardDescription = leaderboardDescription.substring(0, 2045) + '...';
+    }
+    
     embed.setDescription(leaderboardDescription);
     
     message.channel.send({ embeds: [embed] });
