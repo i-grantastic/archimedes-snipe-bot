@@ -5,6 +5,7 @@ const { Client, IntentsBitField, ActivityType, EmbedBuilder } = require('discord
 const channelId = '1169317299237433475'; // snipe channel ID
 const guildId = '1099834703130935296'; // archimedes server ID
 const startDate = new Date('2024-11-06T18:40:00-05:00'); // -5:00 for EST, start from this date
+var cacheDate = null;
 
 // initialize point tracking object
 const userPoints = {};
@@ -90,6 +91,12 @@ client.on('messageCreate', async (message) => {
 
     const channel = await client.channels.fetch(channelId);
 
+    // // reset points each time the command is run
+    // Object.keys(userPoints).forEach(user => {
+    //   userPoints[user].sniper = 0;
+    //   userPoints[user].sniped = 0;
+    // });
+
     let keepFetching = true;
     let lastMessageId = leaderboardCache.lastMessageId || null;
 
@@ -102,6 +109,11 @@ client.on('messageCreate', async (message) => {
     
       messages.forEach((msg) => {
         if (msg.createdTimestamp < startDate.getTime()) {
+          keepFetching = false;
+          return;
+        }
+
+        if (msg.createdTimestamp < cacheDate.getTime()) {
           keepFetching = false;
           return;
         }
@@ -226,13 +238,54 @@ client.on('messageCreate', async (message) => {
   }
 });
 
+// cache leaderboard
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
   if (message.content.startsWith('!cache')) {
-    leaderboardCache.lastMessageId = null; // Reset cache if needed
-    leaderboardCache.userPoints = JSON.parse(JSON.stringify(userPoints));
-    message.channel.send('✅ Cache updated.');
+    const channel = await client.channels.fetch(channelId);
+    let lastMessageId = leaderboardCache.lastMessageId || null;
+    const newPoints = {};
+
+    let keepFetching = true;
+    while (keepFetching) {
+      const options = { limit: 100 };
+      if (lastMessageId) options.before = lastMessageId;
+
+      const messages = await channel.messages.fetch(options);
+      if (messages.size === 0) break;
+
+      messages.forEach((msg) => {
+        if (msg.createdTimestamp < startDate.getTime()) {
+          keepFetching = false;
+          return;
+        }
+
+        const hasImage = msg.attachments.some(attachment =>
+          attachment.contentType && attachment.contentType.startsWith('image')
+        ) || msg.embeds.some(embed => embed.image || embed.thumbnail);
+
+        if (hasImage && msg.mentions.users.size > 0) {
+          if (!newPoints[msg.author.id]) {
+            newPoints[msg.author.id] = { sniper: 0, sniped: 0 };
+          }
+          newPoints[msg.author.id].sniper++;
+
+          msg.mentions.users.forEach(user => {
+            if (!newPoints[user.id]) {
+              newPoints[user.id] = { sniper: 0, sniped: 0 };
+            }
+            newPoints[user.id].sniped++;
+          });
+        }
+      });
+
+      lastMessageId = messages.last().id;
+    }
+
+    leaderboardCache.lastMessageId = lastMessageId;
+    cacheDate = new Date();
+    message.channel.send('✅ Leaderboard cache updated.');
   }
 });
 
