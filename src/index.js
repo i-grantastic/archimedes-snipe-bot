@@ -163,8 +163,9 @@ client.on('messageCreate', async (message) => {
     for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
       const user = await guild.members.fetch(userId);
       const medal = medals[index] || `(${index + 1})`;
+      const shortName = user.displayName.split(' ')[0];
       leaderboardEmbed.addFields({
-        name: `${medal} ${user.displayName}`,
+        name: `${medal} **${shortName}**`,
         value: `${points.sniper} / ${points.sniped} = ${calculateKD(points.sniper, points.sniped)}`,
         inline: false
       });
