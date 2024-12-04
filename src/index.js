@@ -83,6 +83,11 @@ client.on('messageCreate', async (message) => {
 
   // starts with !leaderboard
   if (message.content.startsWith('!leaderboard')) {
+    // check if the leaderboard cache is empty
+    if (Object.keys(leaderboardCache.userPoints).length === 0) {
+      return message.channel.send("❌ Memory is empty, please use !cache");
+    }
+
     const notice = await message.channel.send('🟡 Please wait...');
     const args = message.content.split(' ');
     const sortType = args[1];
