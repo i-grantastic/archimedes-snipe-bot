@@ -146,7 +146,7 @@ client.on('messageCreate', async (message) => {
     let sortedUsers;
     let title = 'Leaderboard'
     if (sortType === 'sniped') {
-      title = 'Leaderboard: Most Sniped'
+      title = 'Leaderboard: Most Sniped';
       sortedUsers = combinedLeaderboard.sort(([, a], [, b]) => {
         // Primary sort by sniped points (descending)
         if (b.sniped !== a.sniped) return b.sniped - a.sniped;
@@ -154,7 +154,7 @@ client.on('messageCreate', async (message) => {
         return a.sniper - b.sniper;
       });
     } else if (sortType === 'kd' || sortType === 'k/d') {
-      title = 'Leaderboard: Highest K/D'
+      title = 'Leaderboard: Highest K/D';
       sortedUsers = combinedLeaderboard.sort(([, a], [, b]) => {
         // primary sort by sniper points (descending)
         if (b.sniper/b.sniped !== a.sniper/a.sniped) return b.sniper/b.sniped - a.sniper/a.sniped;
@@ -191,7 +191,7 @@ client.on('messageCreate', async (message) => {
       .setTitle(`**${title}**`)
       .setDescription(leaderboard)
       .setColor('#ffc800')
-      .setFooter('Sniper • Sniped • K/D');
+      .setFooter({ text: 'Sniper • Sniped • K/D' });
 
     // Send the embed
     await message.channel.send({ embeds: [embed] });
