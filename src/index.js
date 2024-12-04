@@ -47,6 +47,12 @@ client.on('ready', (c) => {
   })
 })
 
+// initialize cache
+let leaderboardCache = {
+  lastMessageId: null,
+  userPoints: {}
+};
+
 // command listener
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
@@ -90,26 +96,26 @@ client.on('messageCreate', async (message) => {
       userPoints[user].sniped = 0;
     });
 
-    let lastMessageId;
     let keepFetching = true;
+    let lastMessageId = leaderboardCache.lastMessageId || null;
 
     while (keepFetching) {
       const options = { limit: 100 };
       if (lastMessageId) options.before = lastMessageId;
-
+    
       const messages = await channel.messages.fetch(options);
       if (messages.size === 0) break;
-
+    
       messages.forEach((msg) => {
         if (msg.createdTimestamp < startDate.getTime()) {
           keepFetching = false;
           return;
         }
-
-        const hasImage = msg.attachments.some(attachment => 
+    
+        const hasImage = msg.attachments.some(attachment =>
           attachment.contentType && attachment.contentType.startsWith('image')
         ) || msg.embeds.some(embed => embed.image || embed.thumbnail);
-
+    
         if (hasImage && msg.mentions.users.size > 0) {
           incrementPoints(msg.author.id, 'sniper');
           msg.mentions.users.forEach(user => {
@@ -117,9 +123,20 @@ client.on('messageCreate', async (message) => {
           });
         }
       });
-
+    
       lastMessageId = messages.last().id;
     }
+
+    Object.keys(userPoints).forEach(user => {
+      if (!leaderboardCache.userPoints[user]) {
+        leaderboardCache.userPoints[user] = userPoints[user];
+      } else {
+        leaderboardCache.userPoints[user].sniper += userPoints[user].sniper;
+        leaderboardCache.userPoints[user].sniped += userPoints[user].sniped;
+      }
+    });
+
+    leaderboardCache.lastMessageId = lastMessageId;
 
     // sort based on the command
     let sortedUsers;
@@ -212,6 +229,16 @@ client.on('messageCreate', async (message) => {
     message.attachments.forEach((attachment) => {
       targetChannel.send({ files: [attachment.url] });
     });
+  }
+});
+
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
+
+  if (message.content.startsWith('!cache')) {
+    leaderboardCache.lastMessageId = null; // Reset cache if needed
+    leaderboardCache.userPoints = JSON.parse(JSON.stringify(userPoints));
+    message.channel.send('✅ Cache updated.');
   }
 });
 
