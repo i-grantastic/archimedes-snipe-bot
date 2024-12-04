@@ -158,15 +158,15 @@ client.on('messageCreate', async (message) => {
 
     const leaderboardEmbed = new EmbedBuilder()
       .setColor('#ffc800')
-      .setTitle('# Leaderboard')
+      .setTitle('**Leaderboard**')
 
     for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
       const user = await guild.members.fetch(userId);
       const medal = medals[index] || `(${index + 1})`;
       leaderboardEmbed.addFields({
         name: `${medal} ${user.displayName}`,
-        value: `📸 ${points.sniper}  🎯 ${points.sniped}  (${calculateKD(points.sniper, points.sniped)} K/D)`,
-        inline: true
+        value: `${points.sniper} / ${points.sniped} = ${calculateKD(points.sniper, points.sniped)}`,
+        inline: false
       });
     }
 
