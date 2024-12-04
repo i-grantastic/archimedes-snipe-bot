@@ -85,7 +85,7 @@ client.on('messageCreate', async (message) => {
   if (message.content.startsWith('!leaderboard')) {
     // check if the leaderboard cache is empty
     if (Object.keys(leaderboardCache.userPoints).length === 0) {
-      return message.channel.send("❌ Memory is empty, please use !cache");
+      return message.channel.send("❌ Memory error, please cache.");
     }
 
     const notice = await message.channel.send('🟡 Please wait...');
@@ -156,26 +156,16 @@ client.on('messageCreate', async (message) => {
     const guild = await client.guilds.fetch(guildId);
     const medals = ['🥇', '🥈', '🥉'];
 
-    // let leaderboard = '# Leaderboard\n**Member  •  Sniper  •  Sniped  •  K/D**\n';
-    // for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
-    //   const user = await guild.members.fetch(userId);
-    //   const medal = medals[index] || `(${index + 1}) `;
-    //   leaderboard += `${medal} ${user.displayName}  •  ${points.sniper}  •  ${points.sniped}  •  ${calculateKD(points.sniper, points.sniped)}\n`;
-    // }
-
-    // message.channel.send(leaderboard);
-
     const leaderboardEmbed = new EmbedBuilder()
       .setColor('#ffc800')
       .setTitle('Leaderboard')
-      .setDescription('!leaderboard')
 
     for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
       const user = await guild.members.fetch(userId);
-      const medal = medals[index] || `(${index + 1}) `;
+      const medal = medals[index] || `(${index + 1})`;
       leaderboardEmbed.addFields({
         name: `${medal} ${user.displayName}`,
-        value: `Sniper: ${points.sniper} | Sniped: ${points.sniped} | K/D: ${calculateKD(points.sniper, points.sniped)}`,
+        value: `📸 ${points.sniper}  🎯 ${points.sniped}  (${calculateKD(points.sniper, points.sniped)} K/D)`,
         inline: false
       });
     }
@@ -199,9 +189,9 @@ client.on('messageCreate', async (message) => {
   // check if there are no tagged users
   const hasNoTaggedUser = message.mentions.users.size === 0;
 
-  // if there is an image and no tagged user, send a response
+  // if there is an image and no tagged user, react
   if (hasImage && hasNoTaggedUser) {
-    message.reply('⚠️ Was that a snipe? For a snipe to be counted, edit your message to include the tagged user in the same message.');
+    message.react('⚠️');
   }
 });
 
