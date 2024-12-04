@@ -226,7 +226,7 @@ client.on('messageCreate', async (message) => {
       if (messages.size === 0) break;
 
       messages.forEach((msg) => {
-        if (leaderboardCache.cacheDate && msg.createdTimestamp < leaderboardCache.cacheDate.getTime()) {
+        if (msg.createdTimestamp < startDate.getTime()) {
           keepFetching = false;
           return;
         }
