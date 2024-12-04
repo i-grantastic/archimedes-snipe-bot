@@ -88,7 +88,7 @@ client.on('messageCreate', async (message) => {
       return message.channel.send("❌ Memory error, please cache.");
     }
 
-    const notice = await message.channel.send('🟡 Please wait...');
+    const notice = await message.channel.send('🔹 Generating...');
     const args = message.content.split(' ');
     const sortType = args[1];
 
@@ -166,14 +166,13 @@ client.on('messageCreate', async (message) => {
       const medal = medals[index] || `(${index + 1})`;
       const shortName = user.displayName.split(' ')[0];
       leaderboardEmbed.addFields({
-        name: '',
+        name: '\u200b',
         value: `**${medal} ${shortName}:** ${points.sniper} / ${points.sniped} = ${calculateKD(points.sniper, points.sniped)}`,
-        inline: false
+        inline: true
       });
     }
 
     message.channel.send({ embeds: [leaderboardEmbed] });
-
     notice.delete();
   }
 })
@@ -226,6 +225,7 @@ client.on('messageCreate', async (message) => {
 
   if (message.content.startsWith('!cache')) {
     const channel = await client.channels.fetch(channelId);
+    const notice = await message.channel.send('🔸 Caching...');
 
     // reset leaderboard data for this calculation
     Object.keys(userPoints).forEach(user => {
@@ -269,6 +269,7 @@ client.on('messageCreate', async (message) => {
     leaderboardCache.cacheDate = new Date();
 
     message.channel.send(`✅ Leaderboard cached at ${leaderboardCache.cacheDate.toLocaleString()} UTC`);
+    notice.delete();
   }
 });
 
