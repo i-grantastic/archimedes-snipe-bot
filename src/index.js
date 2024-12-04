@@ -158,7 +158,7 @@ client.on('messageCreate', async (message) => {
 
     const embed = new EmbedBuilder()
       .setColor('#ffc800')
-      .setTitle('!leaderboard')
+      .setTitle('!leaderboard');
 
     let leaderboardDescription = '';
     for (const [index, [userId, points]] of sortedUsers.entries()) {
