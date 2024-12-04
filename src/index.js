@@ -156,23 +156,20 @@ client.on('messageCreate', async (message) => {
     const guild = await client.guilds.fetch(guildId);
     const medals = ['🥇', '🥈', '🥉'];
 
-    const leaderboardEmbed = new EmbedBuilder()
+    const embed = new EmbedBuilder()
       .setColor('#ffc800')
       .setTitle('!leaderboard')
-      .setDescription('# Leaderboard')
 
-    for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
+    let leaderboardDescription = '';
+    for (const [index, [userId, points]] of sortedUsers.entries()) {
       const user = await guild.members.fetch(userId);
-      const medal = medals[index] || `(${index + 1})`;
+      const medal = medals[index] || `(${index+1}) `;
       const shortName = user.displayName.split(' ')[0];
-      leaderboardEmbed.addFields({
-        name: '\u200b',
-        value: `**${medal} ${shortName}:** ${points.sniper} / ${points.sniped} = ${calculateKD(points.sniper, points.sniped)}`,
-        inline: true
-      });
+      leaderboardDescription += `**${medal} ${shortName}:** ${points.sniper} / ${points.sniped} = ${calculateKD(points.sniper, points.sniped)}\n`;
     }
-
-    message.channel.send({ embeds: [leaderboardEmbed] });
+    embed.setDescription(leaderboardDescription);
+    
+    message.channel.send({ embeds: [embed] });
     notice.delete();
   }
 })
