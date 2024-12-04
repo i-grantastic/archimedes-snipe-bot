@@ -153,33 +153,50 @@ client.on('messageCreate', async (message) => {
       combinedLeaderboard = combinedLeaderboard.slice(0, 10);
     }
 
-    const guild = await client.guilds.fetch(guildId);
-    const medals = ['🥇', '🥈', '🥉'];
+    let yOffset = 70; // Start adding users after the title
+    const width = 800;
+    const height = 600;
 
-    const embed = new EmbedBuilder()
-    .setColor('#0099ff')
-    .setTitle('Leaderboard');
-  
-    // Build the leaderboard description dynamically
-    let leaderboardDescription = '';
-    
-    for (const [index, [userId, points]] of sortedUsers.entries()) {
-      const user = await guild.members.fetch(userId); // Fetch the user
-      const medal = medals[index] || `(${index + 1}) `;
-      const shortName = user.displayName.split(' ')[0];  // Get the first word of the user's name to shorten it
-    
-      leaderboardDescription += `**${medal} ${shortName}:** ${points.sniper} / ${points.sniped} = ${calculateKD(points.sniper, points.sniped)}\n`;
+    // Create a blank white image
+    let image = sharp({
+      create: {
+        width: width,
+        height: height,
+        channels: 3,
+        background: { r: 255, g: 255, b: 255 }, // white background
+      },
+    });
+
+    // Add title (Leaderboard)
+    image = image.composite([{
+      input: Buffer.from(`<svg width="${width}" height="50"><text x="10" y="30" font-size="30" font-family="Arial" fill="black">Leaderboard</text></svg>`),
+      top: 10,
+      left: 10,
+    }]);
+
+    // Add user data
+    for (const user of combinedLeaderboard) {
+      const kd = calculateKD(user.sniper, user.sniped);
+
+      // Add user information to the image
+      image = image.composite([{
+        input: Buffer.from(`<svg width="${width}" height="50">
+          <text x="10" y="${yOffset}" font-size="20" font-family="Arial" fill="black">${user.name}: ${user.sniper} / ${user.sniped} = ${kd}</text>
+        </svg>`),
+        top: 0,
+        left: 0,
+      }]);
+
+      yOffset += 40; // Move down for next user
     }
-    
-    // Check if the description is too long, if so, truncate it
-    if (leaderboardDescription.length > 2048) {
-      leaderboardDescription = leaderboardDescription.substring(0, 2045) + '...';
-    }
-    
-    embed.setDescription(leaderboardDescription);
-    
-    message.channel.send({ embeds: [embed] });
-    notice.delete();
+
+    // Save the image to a file
+    const filePath = 'leaderboard.png';
+    await image.toFile(filePath);
+
+    // Send the image as an attachment to the channel
+    const attachment = new MessageAttachment(filePath);
+    await message.channel.send({ content: 'Here is the leaderboard:', files: [attachment] });
   }
 })
 
