@@ -165,6 +165,7 @@ client.on('messageCreate', async (message) => {
       const medal = medals[index] || `(${index + 1})`;
       const shortName = user.displayName.split(' ')[0];
       leaderboardEmbed.addFields({
+        name: '\u200b',
         value: `**${medal} ${shortName}:** ${points.sniper} / ${points.sniped} = ${calculateKD(points.sniper, points.sniped)}`,
         inline: false
       });
