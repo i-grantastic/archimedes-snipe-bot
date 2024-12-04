@@ -1,5 +1,5 @@
-require('dotenv').config()
-const { Client, IntentsBitField, ActivityType, EmbedBuilder } = require('discord.js')
+require('dotenv').config();
+const { Client, IntentsBitField, ActivityType, EmbedBuilder } = require('discord.js');
 
 // inputs
 const channelId = '1169317299237433475'; // snipe channel ID
@@ -82,10 +82,10 @@ client.on('messageCreate', async (message) => {
   }
 
   // starts with !leaderboard
-  if (message.content.startsWith('!leaderboard')) {
+  if (message.content.startsWith('!leaderboard') || message.content.startsWith('!leader')) {
     // check if the leaderboard cache is empty
     if (Object.keys(leaderboardCache.userPoints).length === 0) {
-      return message.channel.send("❌ Memory error, please cache.");
+      return message.channel.send("🔻 Memory error, please cache.");
     }
 
     const notice = await message.channel.send('🔹 Generating...');
@@ -153,50 +153,28 @@ client.on('messageCreate', async (message) => {
       combinedLeaderboard = combinedLeaderboard.slice(0, 10);
     }
 
-    let yOffset = 70; // Start adding users after the title
-    const width = 800;
-    const height = 600;
+    // build the description string
+    const medals = ['🥇', '🥈', '🥉'];
+    const guild = await client.guilds.fetch(guildId);
 
-    // Create a blank white image
-    let image = sharp({
-      create: {
-        width: width,
-        height: height,
-        channels: 3,
-        background: { r: 255, g: 255, b: 255 }, // white background
-      },
-    });
+    let leaderboard = '';
+    for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
+      const user = await guild.members.fetch(userId);
+      const medal = medals[index] || `(${index+1})`;
+      const shortName = user.displayName.split(' ')[0];
+      leaderboard += `${medal} ${shortName} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
+    };
 
-    // Add title (Leaderboard)
-    image = image.composite([{
-      input: Buffer.from(`<svg width="${width}" height="50"><text x="10" y="30" font-size="30" font-family="Arial" fill="black">Leaderboard</text></svg>`),
-      top: 10,
-      left: 10,
-    }]);
+    // create the EmbedBuilder
+    const embed = new EmbedBuilder()
+      .setTitle('**Leaderboard**')
+      .setDescription(leaderboard)
+      .setColor('#ffc800')
+      .setFooter({ text: 'Sniper • Sniped • K/D' });
 
-    // Add user data
-    for (const user of combinedLeaderboard) {
-      const kd = calculateKD(user.sniper, user.sniped);
-
-      // Add user information to the image
-      image = image.composite([{
-        input: Buffer.from(`<svg width="${width}" height="50">
-          <text x="10" y="${yOffset}" font-size="20" font-family="Arial" fill="black">${user.name}: ${user.sniper} / ${user.sniped} = ${kd}</text>
-        </svg>`),
-        top: 0,
-        left: 0,
-      }]);
-
-      yOffset += 40; // Move down for next user
-    }
-
-    // Save the image to a file
-    const filePath = 'leaderboard.png';
-    await image.toFile(filePath);
-
-    // Send the image as an attachment to the channel
-    const attachment = new MessageAttachment(filePath);
-    await message.channel.send({ content: 'Here is the leaderboard:', files: [attachment] });
+    // Send the embed
+    await message.channel.send({ embeds: [embed] });
+    notice.delete();
   }
 })
 
