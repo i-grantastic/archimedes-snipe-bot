@@ -153,17 +153,35 @@ client.on('messageCreate', async (message) => {
       combinedLeaderboard = combinedLeaderboard.slice(0, 10);
     }
 
-    let leaderboard = '# Leaderboard\n**Member  •  Sniper  •  Sniped  •  K/D**\n';
     const guild = await client.guilds.fetch(guildId);
     const medals = ['🥇', '🥈', '🥉'];
+
+    // let leaderboard = '# Leaderboard\n**Member  •  Sniper  •  Sniped  •  K/D**\n';
+    // for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
+    //   const user = await guild.members.fetch(userId);
+    //   const medal = medals[index] || `(${index + 1}) `;
+    //   leaderboard += `${medal} ${user.displayName}  •  ${points.sniper}  •  ${points.sniped}  •  ${calculateKD(points.sniper, points.sniped)}\n`;
+    // }
+
+    // message.channel.send(leaderboard);
+
+    const leaderboardEmbed = new EmbedBuilder()
+      .setColor('#ffc800')
+      .setTitle('Leaderboard')
+      .setDescription('!leaderboard')
 
     for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
       const user = await guild.members.fetch(userId);
       const medal = medals[index] || `(${index + 1}) `;
-      leaderboard += `${medal} ${user.displayName}  •  ${points.sniper}  •  ${points.sniped}  •  ${calculateKD(points.sniper, points.sniped)}\n`;
+      leaderboardEmbed.addFields({
+        name: `${medal} ${user.displayName}`,
+        value: `Sniper: ${points.sniper} | Sniped: ${points.sniped} | K/D: ${calculateKD(points.sniper, points.sniped)}`,
+        inline: false
+      });
     }
 
-    message.channel.send(leaderboard);
+    message.channel.send({ embeds: [leaderboardEmbed] });
+
     notice.delete();
   }
 })
@@ -258,7 +276,7 @@ client.on('messageCreate', async (message) => {
     leaderboardCache.userPoints = JSON.parse(JSON.stringify(userPoints));
     leaderboardCache.cacheDate = new Date();
 
-    message.channel.send(`✅ Leaderboard cached at ${leaderboardCache.cacheDate.toLocaleString()}`);
+    message.channel.send(`✅ Leaderboard cached at ${leaderboardCache.cacheDate.toLocaleString()} UTC`);
   }
 });
 
