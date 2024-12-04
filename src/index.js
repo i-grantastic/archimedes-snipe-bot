@@ -90,12 +90,6 @@ client.on('messageCreate', async (message) => {
 
     const channel = await client.channels.fetch(channelId);
 
-    // reset points each time the command is run
-    Object.keys(userPoints).forEach(user => {
-      userPoints[user].sniper = 0;
-      userPoints[user].sniped = 0;
-    });
-
     let keepFetching = true;
     let lastMessageId = leaderboardCache.lastMessageId || null;
 
