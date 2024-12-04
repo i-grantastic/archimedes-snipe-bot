@@ -137,13 +137,16 @@ client.on('messageCreate', async (message) => {
     });
 
     // sort and display the combined leaderboard
-    const combinedLeaderboard = Object.entries(leaderboardCache.userPoints)
+    let combinedLeaderboard = Object.entries(leaderboardCache.userPoints)
       .sort(([, a], [, b]) => {
         if (sortType === 'sniped') return b.sniped - a.sniped;
         if (sortType === 'kd') return (b.sniper / b.sniped || 0) - (a.sniper / a.sniped || 0);
         return b.sniper - a.sniper; // default sort by sniper points
-      })
-      .slice(0, 10);
+      });
+
+    if (sortType !== 'all') {
+      combinedLeaderboard = combinedLeaderboard.slice(0, 10);
+    }
 
     let leaderboard = '# Leaderboard\n**Member  •  Sniper  •  Sniped  •  K/D**\n';
     const guild = await client.guilds.fetch(guildId);
