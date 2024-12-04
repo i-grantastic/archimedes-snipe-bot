@@ -143,14 +143,32 @@ client.on('messageCreate', async (message) => {
 
     // sort and display the combined leaderboard
     let combinedLeaderboard = Object.entries(leaderboardCache.userPoints)
-      .sort(([, a], [, b]) => {
-        if (sortType === 'sniped') return b.sniped - a.sniped;
-        if (sortType === 'kd') return (b.sniper / b.sniped || 0) - (a.sniper / a.sniped || 0);
-        return b.sniper - a.sniper; // default sort by sniper points
+    let sortedUsers;
+    if (sortType === 'sniped') {
+      sortedUsers = combinedLeaderboard.sort(([, a], [, b]) => {
+        // Primary sort by sniped points (descending)
+        if (b.sniped !== a.sniped) return b.sniped - a.sniped;
+        // Secondary sort by sniper points (ascending)
+        return a.sniper - b.sniper;
       });
+    } else if (sortType === 'kd') {
+      sortedUsers = combinedLeaderboard.sort(([, a], [, b]) => {
+        // primary sort by sniper points (descending)
+        if (b.sniper/b.sniped !== a.sniper/a.sniped) return b.sniper/b.sniped - a.sniper/a.sniped;
+        // secondary sort by sniped points (ascending)
+        return b.sniper - a.sniper;
+      });
+    } else {
+      sortedUsers = combinedLeaderboard.sort(([, a], [, b]) => {
+        // primary sort by sniper points (descending)
+        if (b.sniper !== a.sniper) return b.sniper - a.sniper;
+        // secondary sort by sniped points (ascending)
+        return a.sniped - b.sniped;
+      });
+    }
 
     if (sortType !== 'all') {
-      combinedLeaderboard = combinedLeaderboard.slice(0, 10);
+      sortedUsers = sortedUsers.slice(0, 10);
     }
 
     // build the description string
@@ -158,7 +176,7 @@ client.on('messageCreate', async (message) => {
     const guild = await client.guilds.fetch(guildId);
 
     let leaderboard = '';
-    for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
+    for (const [index, [userId, points]] of sortedUsers.entries()) {
       const user = await guild.members.fetch(userId);
       const medal = medals[index] || `(${index+1})`;
       const shortName = user.displayName.split(' ')[0];
