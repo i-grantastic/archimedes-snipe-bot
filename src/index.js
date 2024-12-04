@@ -5,7 +5,6 @@ const { Client, IntentsBitField, ActivityType, EmbedBuilder } = require('discord
 const channelId = '1169317299237433475'; // snipe channel ID
 const guildId = '1099834703130935296'; // archimedes server ID
 const startDate = new Date('2024-11-06T18:40:00-05:00'); // -5:00 for EST, start from this date
-var cacheDate = null;
 
 // initialize point tracking object
 const userPoints = {};
@@ -84,44 +83,38 @@ client.on('messageCreate', async (message) => {
 
   // starts with !leaderboard
   if (message.content.startsWith('!leaderboard')) {
-    const notice = await message.channel.send('🟡  Please wait...');
-
-    const args = message.content.split(' '); // split command and arguments
+    const notice = await message.channel.send('🟡 Please wait...');
+    const args = message.content.split(' ');
     const sortType = args[1];
 
     const channel = await client.channels.fetch(channelId);
 
-    // // reset points each time the command is run
-    // Object.keys(userPoints).forEach(user => {
-    //   userPoints[user].sniper = 0;
-    //   userPoints[user].sniped = 0;
-    // });
+    // reset leaderboard data for this calculation
+    Object.keys(userPoints).forEach(user => {
+      userPoints[user].sniper = 0;
+      userPoints[user].sniped = 0;
+    });
 
+    let lastMessageId = null;
     let keepFetching = true;
-    let lastMessageId = leaderboardCache.lastMessageId || null;
 
     while (keepFetching) {
       const options = { limit: 100 };
       if (lastMessageId) options.before = lastMessageId;
-    
+
       const messages = await channel.messages.fetch(options);
       if (messages.size === 0) break;
-    
+
       messages.forEach((msg) => {
-        if (msg.createdTimestamp < startDate.getTime()) {
+        if (leaderboardCache.cacheDate && msg.createdTimestamp < leaderboardCache.cacheDate.getTime()) {
           keepFetching = false;
           return;
         }
 
-        if (msg.createdTimestamp < cacheDate.getTime()) {
-          keepFetching = false;
-          return;
-        }
-    
         const hasImage = msg.attachments.some(attachment =>
           attachment.contentType && attachment.contentType.startsWith('image')
         ) || msg.embeds.some(embed => embed.image || embed.thumbnail);
-    
+
         if (hasImage && msg.mentions.users.size > 0) {
           incrementPoints(msg.author.id, 'sniper');
           msg.mentions.users.forEach(user => {
@@ -129,10 +122,11 @@ client.on('messageCreate', async (message) => {
           });
         }
       });
-    
+
       lastMessageId = messages.last().id;
     }
 
+    // merge new results into the cached leaderboard
     Object.keys(userPoints).forEach(user => {
       if (!leaderboardCache.userPoints[user]) {
         leaderboardCache.userPoints[user] = userPoints[user];
@@ -142,54 +136,24 @@ client.on('messageCreate', async (message) => {
       }
     });
 
-    leaderboardCache.lastMessageId = lastMessageId;
+    // sort and display the combined leaderboard
+    const combinedLeaderboard = Object.entries(leaderboardCache.userPoints)
+      .sort(([, a], [, b]) => {
+        if (sortType === 'sniped') return b.sniped - a.sniped;
+        if (sortType === 'kd') return (b.sniper / b.sniped || 0) - (a.sniper / a.sniped || 0);
+        return b.sniper - a.sniper; // default sort by sniper points
+      })
+      .slice(0, 10);
 
-    // sort based on the command
-    let sortedUsers;
-    if (sortType === 'sniped') {
-      sortedUsers = Object.entries(userPoints).sort(([, a], [, b]) => {
-        // Primary sort by sniped points (descending)
-        if (b.sniped !== a.sniped) return b.sniped - a.sniped;
-        // Secondary sort by sniper points (ascending)
-        return a.sniper - b.sniper;
-      });
-    } else if (sortType === 'kd') {
-      sortedUsers = Object.entries(userPoints).sort(([, a], [, b]) => {
-        // primary sort by sniper points (descending)
-        if (b.sniper/b.sniped !== a.sniper/a.sniped) return b.sniper/b.sniped - a.sniper/a.sniped;
-        // secondary sort by sniped points (ascending)
-        return b.sniper - a.sniper;
-      });
-    } else {
-      sortedUsers = Object.entries(userPoints).sort(([, a], [, b]) => {
-        // primary sort by sniper points (descending)
-        if (b.sniper !== a.sniper) return b.sniper - a.sniper;
-        // secondary sort by sniped points (ascending)
-        return a.sniped - b.sniped;
-      });
-    }
-
-    if (sortType !== 'all') { sortedUsers = sortedUsers.slice(0, 10) }
-
-    // generate the leaderboard table
-    let leaderboard = '# Leaderboard\n';
-    if (sortType === 'sniped') {leaderboard += '**Filter: Most sniped**\n\n'};
-    if (sortType === 'kd') {leaderboard += '**Filter: Highest K/D**\n\n'};
-    if (sortType === 'teams' || sortType === 'team') {
-      leaderboard += '**Filter: Teams**\n\n'
-      leaderboard += '**Team  •  Sniper  •  Sniped  •  K/D**\n';
-    } else {
-      leaderboard += '**Member  •  Sniper  •  Sniped  •  K/D**\n';
-    };
-    
-    const medals = ['🥇', '🥈', '🥉'];
+    let leaderboard = '# Leaderboard\n**Member  •  Sniper  •  Sniped  •  K/D**\n';
     const guild = await client.guilds.fetch(guildId);
+    const medals = ['🥇', '🥈', '🥉'];
 
-    for (const [index, [userId, points]] of sortedUsers.entries()) {
+    for (const [index, [userId, points]] of combinedLeaderboard.entries()) {
       const user = await guild.members.fetch(userId);
-      const medal = medals[index] || `(${index+1}) `;
+      const medal = medals[index] || `(${index + 1}) `;
       leaderboard += `${medal} ${user.displayName}  •  ${points.sniper}  •  ${points.sniped}  •  ${calculateKD(points.sniper, points.sniped)}\n`;
-    };
+    }
 
     message.channel.send(leaderboard);
     notice.delete();
@@ -244,10 +208,16 @@ client.on('messageCreate', async (message) => {
 
   if (message.content.startsWith('!cache')) {
     const channel = await client.channels.fetch(channelId);
-    let lastMessageId = leaderboardCache.lastMessageId || null;
-    const newPoints = {};
 
+    // reset leaderboard data for this calculation
+    Object.keys(userPoints).forEach(user => {
+      userPoints[user].sniper = 0;
+      userPoints[user].sniped = 0;
+    });
+
+    let lastMessageId = null;
     let keepFetching = true;
+
     while (keepFetching) {
       const options = { limit: 100 };
       if (lastMessageId) options.before = lastMessageId;
@@ -256,7 +226,7 @@ client.on('messageCreate', async (message) => {
       if (messages.size === 0) break;
 
       messages.forEach((msg) => {
-        if (msg.createdTimestamp < startDate.getTime()) {
+        if (leaderboardCache.cacheDate && msg.createdTimestamp < leaderboardCache.cacheDate.getTime()) {
           keepFetching = false;
           return;
         }
@@ -266,16 +236,9 @@ client.on('messageCreate', async (message) => {
         ) || msg.embeds.some(embed => embed.image || embed.thumbnail);
 
         if (hasImage && msg.mentions.users.size > 0) {
-          if (!newPoints[msg.author.id]) {
-            newPoints[msg.author.id] = { sniper: 0, sniped: 0 };
-          }
-          newPoints[msg.author.id].sniper++;
-
+          incrementPoints(msg.author.id, 'sniper');
           msg.mentions.users.forEach(user => {
-            if (!newPoints[user.id]) {
-              newPoints[user.id] = { sniper: 0, sniped: 0 };
-            }
-            newPoints[user.id].sniped++;
+            incrementPoints(user.id, 'sniped');
           });
         }
       });
@@ -283,9 +246,11 @@ client.on('messageCreate', async (message) => {
       lastMessageId = messages.last().id;
     }
 
-    leaderboardCache.lastMessageId = lastMessageId;
-    cacheDate = new Date();
-    message.channel.send('✅ Leaderboard cache updated.');
+    // cache the result
+    leaderboardCache.userPoints = JSON.parse(JSON.stringify(userPoints));
+    leaderboardCache.cacheDate = new Date();
+
+    message.channel.send(`✅ Leaderboard cached at ${leaderboardCache.cacheDate.toLocaleString()}`);
   }
 });
 
