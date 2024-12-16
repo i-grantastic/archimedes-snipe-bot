@@ -47,6 +47,12 @@ client.on('ready', (c) => {
   })
 })
 
+// initialize memory
+let leaderboardMemory = {
+  lastMessageId: null,
+  userPoints: {}
+};
+
 // initialize cache
 let leaderboardCache = {
   lastMessageId: null,
@@ -83,6 +89,8 @@ client.on('messageCreate', async (message) => {
 
   // starts with !leaderboard
   if (message.content.startsWith('!leaderboard') || message.content.startsWith('!leader')) {
+    leaderboardCache = leaderboardMemory
+
     // check if the leaderboard cache is empty
     if (Object.keys(leaderboardCache.userPoints).length === 0) {
       return message.channel.send("🔻 Memory error, please cache.");
@@ -287,10 +295,10 @@ client.on('messageCreate', async (message) => {
     }
 
     // cache the result
-    leaderboardCache.userPoints = JSON.parse(JSON.stringify(userPoints));
-    leaderboardCache.cacheDate = new Date();
+    leaderboardMemory.userPoints = JSON.parse(JSON.stringify(userPoints));
+    leaderboardMemory.cacheDate = new Date();
 
-    message.channel.send(`✅ Leaderboard cached at ${leaderboardCache.cacheDate.toLocaleString()} UTC`);
+    message.channel.send(`✅ Leaderboard cached at ${leaderboardMemory.cacheDate.toLocaleString()} UTC`);
     notice.delete();
   }
 });
