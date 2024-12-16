@@ -27,24 +27,33 @@ function calculateKD(sniper, sniped) {
   }
 }
 
-// function to get user team
-function getUserTeam(user) {
-  const member = message.guild.members.cache.get(user.id);
-  if (!member) return null;
+async function getUserTeam(userID, guild) {
+  try {
+    // Fetch the member object using the userID
+    const member = await guild.members.fetch(userID);
+    if (!member) {
+      console.log('Member not found');
+      return null;
+    }
 
-  // define roles for each team
-  const leadershipRoles = ['President', 'Vice President', 'Secretary', 'Treasurer', 'Publicity', 'Recruiter', 'Advisor'];
-  const teamRoles = ['Astra', 'Infinitum', 'Juvo', 'Terra'];
+    // Define roles for each team
+    const leadershipRoles = ['President', 'Vice President', 'Secretary', 'Treasurer', 'Publicity', 'Recruiter', 'Advisor'];
+    const teamRoles = ['Astra', 'Infinitum', 'Juvo', 'Terra'];
 
-  // check for leadership roles first
-  const hasLeadershipRole = member.roles.cache.some(role => leadershipRoles.includes(role.name));
-  if (hasLeadershipRole) {
-    return 'Leadership';
+    // Check for leadership roles first
+    const hasLeadershipRole = member.roles.cache.some(role => leadershipRoles.includes(role.name));
+    if (hasLeadershipRole) {
+      return 'Leadership';
+    }
+
+    // If not leadership, check for other team roles
+    const userRole = member.roles.cache.find(role => teamRoles.includes(role.name));
+    return userRole ? userRole.name : null;
+
+  } catch (error) {
+    console.error('Error fetching member:', error);
+    return null;
   }
-
-  // if not leadership, check for other team roles
-  const userRole = member.roles.cache.find(role => teamRoles.includes(role.name));
-  return userRole ? userRole.name : null;
 }
 
 // settings to include
@@ -218,6 +227,7 @@ client.on('messageCreate', async (message) => {
     const guild = await client.guilds.fetch(guildId);
 
     let leaderboard = '';
+    let embed = '';
 
     if (sortType === 'teams') {
       for (const [index, [team, points]] of sortedUsers.entries()) {
@@ -226,7 +236,7 @@ client.on('messageCreate', async (message) => {
       };
 
       // create the EmbedBuilder
-      const embed = new EmbedBuilder()
+      embed = new EmbedBuilder()
         .setTitle(`**${title}**`)
         .setDescription(leaderboard)
         .setColor('#ffc800')
@@ -241,7 +251,7 @@ client.on('messageCreate', async (message) => {
       };
 
       // create the EmbedBuilder
-      const embed = new EmbedBuilder()
+      embed = new EmbedBuilder()
         .setTitle(`**${title}**`)
         .setDescription(leaderboard)
         .setColor('#ffc800')
@@ -322,7 +332,7 @@ client.on('messageCreate', async (message) => {
       const messages = await channel.messages.fetch(options);
       if (messages.size === 0) break;
 
-      messages.forEach((msg) => {
+      messages.forEach(async (msg) => {
         if (msg.createdTimestamp < startDate.getTime()) {
           keepFetching = false;
           return;
@@ -334,13 +344,19 @@ client.on('messageCreate', async (message) => {
 
         if (hasImage && msg.mentions.users.size > 0) {
           incrementPoints(msg.author.id, 'sniper');
-          const authorTeam = getUserTeam(msg.author);
-          if (authorTeam) teamPoints[authorTeam].sniper++;
 
-          msg.mentions.users.forEach(user => {
+          const authorTeam = await getUserTeam(msg.author.id, msg.guild);
+          if (authorTeam && teamPoints[authorTeam]) {
+            teamPoints[authorTeam].sniper++;
+          }
+
+          msg.mentions.users.forEach(async user => {
             incrementPoints(user.id, 'sniped');
-            const mentionedTeam = getUserTeam(user);
-            if (mentionedTeam) teamPoints[mentionedTeam].sniped++;
+
+            const mentionedTeam = await getUserTeam(user.id, msg.guild);
+            if (mentionedTeam && teamPoints[mentionedTeam]) {
+              teamPoints[mentionedTeam].sniped++;
+            }
           });
         }
       });
@@ -352,6 +368,7 @@ client.on('messageCreate', async (message) => {
     leaderboardMemory.userPoints = JSON.parse(JSON.stringify(userPoints));
     leaderboardMemory.teamPoints = JSON.parse(JSON.stringify(teamPoints));
     leaderboardMemory.cacheDate = new Date();
+    console.log(leaderboardMemory.teamPoints);
 
     message.channel.send(`✅ Leaderboard cached at ${leaderboardMemory.cacheDate.toLocaleString()} UTC`);
     notice.delete();
