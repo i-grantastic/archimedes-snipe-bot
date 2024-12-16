@@ -27,6 +27,26 @@ function calculateKD(sniper, sniped) {
   }
 }
 
+// function to get user team
+function getUserTeam(user) {
+  const member = message.guild.members.cache.get(user.id);
+  if (!member) return null;
+
+  // define roles for each team
+  const leadershipRoles = ['President', 'Vice President', 'Secretary', 'Treasurer', 'Publicity', 'Recruiter', 'Advisor'];
+  const teamRoles = ['Astra', 'Infinitum', 'Juvo', 'Terra'];
+
+  // check for leadership roles first
+  const hasLeadershipRole = member.roles.cache.some(role => leadershipRoles.includes(role.name));
+  if (hasLeadershipRole) {
+    return 'Leadership';
+  }
+
+  // if not leadership, check for other team roles
+  const userRole = member.roles.cache.find(role => teamRoles.includes(role.name));
+  return userRole ? userRole.name : null;
+}
+
 // settings to include
 const client = new Client({
   intents: [
@@ -151,14 +171,17 @@ client.on('messageCreate', async (message) => {
 
     // sort and display the combined leaderboard
     let combinedLeaderboard = Object.entries(leaderboardCache.userPoints)
+    if (sortType === 'teams') {
+      combinedLeaderboard = Object.entries(leaderboardCache.teamPoints)
+    }
     let sortedUsers;
     let title = 'Leaderboard'
     if (sortType === 'sniped') {
       title = 'Leaderboard: Most Sniped';
       sortedUsers = combinedLeaderboard.sort(([, a], [, b]) => {
-        // Primary sort by sniped points (descending)
+        // primary sort by sniped points (descending)
         if (b.sniped !== a.sniped) return b.sniped - a.sniped;
-        // Secondary sort by sniper points (ascending)
+        // secondary sort by sniper points (ascending)
         return a.sniper - b.sniper;
       });
     } else if (sortType === 'kd' || sortType === 'k/d') {
@@ -168,6 +191,14 @@ client.on('messageCreate', async (message) => {
         if (b.sniper/b.sniped !== a.sniper/a.sniped) return b.sniper/b.sniped - a.sniper/a.sniped;
         // secondary sort by sniped points (ascending)
         return b.sniper - a.sniper;
+      });
+    } else if (sortType === 'teams') {
+      title = 'Leaderboard: Teams';
+      sortedUsers = combinedLeaderboard.sort(([, a], [, b]) => {
+        // primary sort by sniper points (descending)
+        if (b.sniper !== a.sniper) return b.sniper - a.sniper;
+        // secondary sort by sniped points (ascending)
+        return a.sniped - b.sniped;
       });
     } else {
       sortedUsers = combinedLeaderboard.sort(([, a], [, b]) => {
@@ -187,21 +218,37 @@ client.on('messageCreate', async (message) => {
     const guild = await client.guilds.fetch(guildId);
 
     let leaderboard = '';
-    for (const [index, [userId, points]] of sortedUsers.entries()) {
-      const user = await guild.members.fetch(userId);
-      const medal = medals[index] || `(${index+1})`;
-      const shortName = user.displayName.split(' ')[0];
-      leaderboard += `${medal} ${shortName} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
-    };
 
-    // create the EmbedBuilder
-    const embed = new EmbedBuilder()
-      .setTitle(`**${title}**`)
-      .setDescription(leaderboard)
-      .setColor('#ffc800')
-      .setFooter({ text: 'Sniper • Sniped • K/D' });
+    if (sortType === 'teams') {
+      for (const [index, [team, points]] of sortedUsers.entries()) {
+        const medal = medals[index] || `(${index+1})`;
+        leaderboard += `${medal} ${team} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
+      };
 
-    // Send the embed
+      // create the EmbedBuilder
+      const embed = new EmbedBuilder()
+        .setTitle(`**${title}**`)
+        .setDescription(leaderboard)
+        .setColor('#ffc800')
+        .setFooter({ text: 'Sniper • Sniped • K/D' });
+
+    } else {
+      for (const [index, [userId, points]] of sortedUsers.entries()) {
+        const user = await guild.members.fetch(userId);
+        const medal = medals[index] || `(${index+1})`;
+        const shortName = user.displayName.split(' ')[0];
+        leaderboard += `${medal} ${shortName} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
+      };
+
+      // create the EmbedBuilder
+      const embed = new EmbedBuilder()
+        .setTitle(`**${title}**`)
+        .setDescription(leaderboard)
+        .setColor('#ffc800')
+        .setFooter({ text: 'Sniper • Sniped • K/D' });
+    }
+
+    // send the embed
     await message.channel.send({ embeds: [embed] });
     notice.delete();
   }
@@ -263,6 +310,8 @@ client.on('messageCreate', async (message) => {
       userPoints[user].sniped = 0;
     });
 
+    const teamPoints = { Astra: { sniper: 0, sniped: 0 }, Infinitum: { sniper: 0, sniped: 0 }, Juvo: { sniper: 0, sniped: 0 }, Terra: { sniper: 0, sniped: 0 }, Leadership: { sniper: 0, sniped: 0 } };
+
     let lastMessageId = null;
     let keepFetching = true;
 
@@ -285,8 +334,13 @@ client.on('messageCreate', async (message) => {
 
         if (hasImage && msg.mentions.users.size > 0) {
           incrementPoints(msg.author.id, 'sniper');
+          const authorTeam = getUserTeam(msg.author);
+          if (authorTeam) teamPoints[authorTeam].sniper++;
+
           msg.mentions.users.forEach(user => {
             incrementPoints(user.id, 'sniped');
+            const mentionedTeam = getUserTeam(user);
+            if (mentionedTeam) teamPoints[mentionedTeam].sniped++;
           });
         }
       });
@@ -294,8 +348,9 @@ client.on('messageCreate', async (message) => {
       lastMessageId = messages.last().id;
     }
 
-    // cache the result
+    // cache the results
     leaderboardMemory.userPoints = JSON.parse(JSON.stringify(userPoints));
+    leaderboardMemory.teamPoints = JSON.parse(JSON.stringify(teamPoints));
     leaderboardMemory.cacheDate = new Date();
 
     message.channel.send(`✅ Leaderboard cached at ${leaderboardMemory.cacheDate.toLocaleString()} UTC`);
