@@ -118,7 +118,7 @@ client.on('messageCreate', async (message) => {
 
   // starts with !leaderboard
   if (message.content.startsWith('!leaderboard') || message.content.startsWith('!leader') || message.content.startsWith('!lb')) {
-    leaderboardCache = leaderboardMemory
+    leaderboardCache = JSON.parse(JSON.stringify(leaderboardMemory));
 
     // check if the leaderboard cache is empty
     if (Object.keys(leaderboardCache.userPoints).length === 0) {
