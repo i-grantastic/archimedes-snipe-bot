@@ -326,7 +326,7 @@ client.on('messageCreate', async (message) => {
     let keepFetching = true;
 
     while (keepFetching) {
-      const options = { limit: 100 };
+      const options = { limit: 1000 };
       if (lastMessageId) options.before = lastMessageId;
 
       const messages = await channel.messages.fetch(options);
