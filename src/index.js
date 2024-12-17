@@ -362,7 +362,7 @@ client.on('messageCreate', async (message) => {
       });
 
       lastMessageId = messages.last().id;
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     // cache the results
