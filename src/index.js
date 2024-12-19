@@ -9,6 +9,15 @@ const startDate = new Date('2024-11-06T18:40:00-05:00'); // -5:00 for EST, start
 // initialize point tracking object
 const userPoints = {};
 const teamPoints = { Astra: { sniper: 0, sniped: 0 }, Infinitum: { sniper: 0, sniped: 0 }, Juvo: { sniper: 0, sniped: 0 }, Terra: { sniper: 0, sniped: 0 }, Leadership: { sniper: 0, sniped: 0 } };
+const snipedPairs = {};
+
+// initialize leaderboard objects
+let leaderboardMemory = {
+  userPoints: {},
+  teamPoints: {},
+  snipedPairs: {},
+  cacheDate: null
+};
 
 // function to increment points
 function incrementPoints(userId, type) {
@@ -58,12 +67,17 @@ async function getUserTeam(userID, guild) {
   }
 }
 
-// cache leaderboard
+// functin to get leaderboard
 async function getLeaderboard(stopDate, timeout) {
   const channel = await client.channels.fetch(channelId);
   let lastMessageId = null;
   let keepFetching = true;
-  let getLeaderboard = {};
+  let getLeaderboard = {
+    userPoints: {},
+    teamPoints: {},
+    snipedPairs: {},
+    cacheDate: null
+  };
 
   // reset leaderboard data for this calculation
   Object.keys(userPoints).forEach(user => {
@@ -74,6 +88,9 @@ async function getLeaderboard(stopDate, timeout) {
     teamPoints[team].sniper = 0;
     teamPoints[team].sniped = 0;
   })
+  Object.keys(snipedPairs).forEach(pair => {
+    snipedPairs[pair] = 0;
+  });
 
   while (keepFetching) {
     const options = { limit: 100 };
@@ -101,12 +118,21 @@ async function getLeaderboard(stopDate, timeout) {
         }
 
         msg.mentions.users.forEach(async user => {
+          // add points to user
           incrementPoints(user.id, 'sniped');
 
+          // add points to team
           const mentionedTeam = await getUserTeam(user.id, msg.guild);
           if (mentionedTeam && teamPoints[mentionedTeam]) {
             teamPoints[mentionedTeam].sniped++;
           }
+
+          // add points to opps
+          const pairKey = `${msg.author.id}:${user.id}`;
+          if (!snipedPairs[pairKey]) {
+            snipedPairs[pairKey] = 0;
+          }
+          snipedPairs[pairKey]++;
         });
       }
     });
@@ -118,6 +144,7 @@ async function getLeaderboard(stopDate, timeout) {
   // cache the results
   getLeaderboard.userPoints = JSON.parse(JSON.stringify(userPoints));
   getLeaderboard.teamPoints = JSON.parse(JSON.stringify(teamPoints));
+  getLeaderboard.snipedPairs = JSON.parse(JSON.stringify(snipedPairs));
   getLeaderboard.cacheDate = new Date();
 
   return getLeaderboard
@@ -174,18 +201,16 @@ client.on('messageCreate', async (message) => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
   if (message.content.startsWith('!leaderboard') || message.content.startsWith('!leader') || message.content.startsWith('!lb')) {
-    let leaderboardCache = structuredClone(leaderboardMemory);
-
     // check if the leaderboard cache is empty
-    if (Object.keys(leaderboardCache.userPoints).length === 0) {
+    if (Object.keys(leaderboardMemory.userPoints).length === 0) {
       return message.channel.send("🔻 Memory error, please cache.");
     }
 
     const notice = await message.channel.send('🔹 Generating...');
     const args = message.content.split(' ');
     const sortType = args[1];
-
-    await getLeaderboard(leaderboardCache.cacheDate.getTime(), 0);
+    let leaderboardCache = structuredClone(leaderboardMemory);
+    await getLeaderboard(leaderboardMemory.cacheDate, 0);
 
     // merge new results into the cached leaderboard
     Object.keys(userPoints).forEach(user => {
@@ -204,11 +229,21 @@ client.on('messageCreate', async (message) => {
         leaderboardCache.teamPoints[team].sniped += teamPoints[team].sniped;
       }
     });
+    Object.keys(snipedPairs).forEach(pair => {
+      if (!leaderboardCache.snipedPairs[pair]) {
+        leaderboardCache.snipedPairs[pair] = snipedPairs[pair];
+      } else {
+        leaderboardCache.snipedPairs[pair] += snipedPairs[pair];
+      }
+    });
 
     // sort and display the combined leaderboard
     let combinedLeaderboard = Object.entries(leaderboardCache.userPoints)
     if (sortType === 'teams') {
       combinedLeaderboard = Object.entries(leaderboardCache.teamPoints)
+    }
+    if (sortType === 'opps') {
+      combinedLeaderboard = Object.entries(leaderboardCache.snipedPairs)
     }
     let sortedUsers;
     let title = 'Leaderboard'
@@ -236,6 +271,18 @@ client.on('messageCreate', async (message) => {
         // secondary sort by sniped points (ascending)
         return a.sniped - b.sniped;
       });
+    } else if (sortType === 'opps') {
+      title = 'Leaderboard: Opps';
+      sortedUsers = combinedLeaderboard
+        .map(([pair, count]) => {
+          const [sniperId, snipedId] = pair.split(':');
+          return {
+            sniperId,
+            snipedId,
+            count,
+          };
+        })
+        .sort((a, b) => b.count - a.count);
     } else {
       sortedUsers = combinedLeaderboard.sort(([, a], [, b]) => {
         // primary sort by sniper points (descending)
@@ -269,6 +316,22 @@ client.on('messageCreate', async (message) => {
         .setColor('#ffc800')
         .setFooter({ text: 'Sniper • Sniped • K/D' });
 
+    } else if (sortType === 'opps') {
+      for (const [index, { sniperId, snipedId, count }] of sortedUsers.entries()) {
+        const sniper = await guild.members.fetch(sniperId);
+        const sniped = await guild.members.fetch(snipedId);
+        const sniperShortName = sniper.displayName.split(' ')[0];
+        const snipedShortName = sniped.displayName.split(' ')[0];
+        const medal = medals[index] || `(${index+1})`;
+        leaderboard += `${medal} ${sniperShortName} ⟶ ${snipedShortName} (${count}) \n`;
+      };
+
+      // create the EmbedBuilder
+      embed = new EmbedBuilder()
+        .setTitle(`**${title}**`)
+        .setDescription(leaderboard)
+        .setColor('#ffc800')
+        .setFooter({ text: 'Sniper ⟶ Sniped (Amount)' });
     } else {
       for (const [index, [userId, points]] of sortedUsers.entries()) {
         const user = await guild.members.fetch(userId);
@@ -334,7 +397,6 @@ client.on('messageCreate', async (message) => {
 });
 
 // cache leaderboard
-let leaderboardMemory = {};
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
