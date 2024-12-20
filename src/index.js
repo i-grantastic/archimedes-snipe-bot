@@ -127,7 +127,7 @@ async function getLeaderboard(stopDate, timeout) {
             teamPoints[mentionedTeam].sniped++;
           }
 
-          // add points to opps
+          // add points to duos
           const pairKey = `${msg.author.id}:${user.id}`;
           if (!snipedPairs[pairKey]) {
             snipedPairs[pairKey] = 0;
@@ -242,7 +242,7 @@ client.on('messageCreate', async (message) => {
     if (sortType === 'teams') {
       combinedLeaderboard = Object.entries(leaderboardCache.teamPoints)
     }
-    if (sortType === 'opps') {
+    if (sortType === 'duos') {
       combinedLeaderboard = Object.entries(leaderboardCache.snipedPairs)
     }
     let sortedUsers;
@@ -271,8 +271,8 @@ client.on('messageCreate', async (message) => {
         // secondary sort by sniped points (ascending)
         return a.sniped - b.sniped;
       });
-    } else if (sortType === 'opps') {
-      title = 'Leaderboard: Opps';
+    } else if (sortType === 'duos') {
+      title = 'Leaderboard: Sniper Duos';
       sortedUsers = combinedLeaderboard
         .map(([pair, count]) => {
           const [sniperId, snipedId] = pair.split(':');
@@ -316,14 +316,14 @@ client.on('messageCreate', async (message) => {
         .setColor('#ffc800')
         .setFooter({ text: 'Sniper • Sniped • K/D' });
 
-    } else if (sortType === 'opps') {
+    } else if (sortType === 'duos') {
       for (const [index, { sniperId, snipedId, count }] of sortedUsers.entries()) {
         const sniper = await guild.members.fetch(sniperId);
         const sniped = await guild.members.fetch(snipedId);
         const sniperShortName = sniper.displayName.split(' ')[0];
         const snipedShortName = sniped.displayName.split(' ')[0];
         const medal = medals[index] || `(${index+1})`;
-        leaderboard += `${medal} ${sniperShortName} ⟶ ${snipedShortName} (${count}) \n`;
+        leaderboard += `${medal} ${sniperShortName} → ${snipedShortName} (${count}) \n`;
       };
 
       // create the EmbedBuilder
@@ -331,7 +331,7 @@ client.on('messageCreate', async (message) => {
         .setTitle(`**${title}**`)
         .setDescription(leaderboard)
         .setColor('#ffc800')
-        .setFooter({ text: 'Sniper ⟶ Sniped (Amount)' });
+        .setFooter({ text: 'Sniper → Sniped (Amount)' });
     } else {
       for (const [index, [userId, points]] of sortedUsers.entries()) {
         const user = await guild.members.fetch(userId);
