@@ -129,10 +129,15 @@ async function getLeaderboard(stopDate, timeout) {
 
           // add points to duos
           const pairKey = `${msg.author.id}:${user.id}`;
-          if (!snipedPairs[pairKey]) {
+          const pairKeyInv = `${user.id}:${msg.author.id}`;
+
+          if (!snipedPairs[pairKey] && !snipedPairs[pairKeyInv]) {
             snipedPairs[pairKey] = 0;
+          } else if (snipedPairs[pairKeyInv]) {
+            snipedPairs[pairKeyInv]++;
+          } else {
+            snipedPairs[pairKey]++;
           }
-          snipedPairs[pairKey]++;
         });
       }
     });
@@ -331,7 +336,7 @@ client.on('messageCreate', async (message) => {
         .setTitle(`**${title}**`)
         .setDescription(leaderboard)
         .setColor('#ffc800')
-        .setFooter({ text: 'Sniper → Sniped (Amount)' });
+        .setFooter({ text: 'Sniper ↔ Sniper (Amount)' });
     } else {
       for (const [index, [userId, points]] of sortedUsers.entries()) {
         const user = await guild.members.fetch(userId);
