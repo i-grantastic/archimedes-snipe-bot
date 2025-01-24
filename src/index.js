@@ -328,7 +328,7 @@ client.on('messageCreate', async (message) => {
         const sniperShortName = sniper.displayName.split(' ')[0];
         const snipedShortName = sniped.displayName.split(' ')[0];
         const medal = medals[index] || `(${index+1})`;
-        leaderboard += `${medal} ${sniperShortName} ↔ ${snipedShortName} (${count}) \n`;
+        leaderboard += `${medal} ${sniperShortName} ⇄ ${snipedShortName} (${count}) \n`;
       };
 
       // create the EmbedBuilder
@@ -336,7 +336,7 @@ client.on('messageCreate', async (message) => {
         .setTitle(`**${title}**`)
         .setDescription(leaderboard)
         .setColor('#ffc800')
-        .setFooter({ text: 'Sniper ↔ Sniper (Amount)' });
+        .setFooter({ text: 'Sniper ⇄ Sniper (Amount)' });
     } else {
       for (const [index, [userId, points]] of sortedUsers.entries()) {
         const user = await guild.members.fetch(userId);
