@@ -131,8 +131,8 @@ async function getLeaderboard(stopDate, timeout) {
           const pairKey = `${msg.author.id}:${user.id}`;
           const pairKeyInv = `${user.id}:${msg.author.id}`;
 
-          if (!snipedPairs[pairKey] && !snipedPairs[pairKeyInv]) {
-            snipedPairs[pairKey] = 0;
+          if (snipedPairs[pairKey] === undefined && snipedPairs[pairKeyInv] === undefined) {
+            snipedPairs[pairKey] = 1;
           } else if (snipedPairs[pairKeyInv]) {
             snipedPairs[pairKeyInv]++;
           } else {
@@ -190,7 +190,7 @@ client.on('messageCreate', async (message) => {
         },
         {
           name: '\u200B\nRules',
-          value: '1. No sniping within 15 minutes of a meeting.\n2. No sniping if a member location is revealed.\n3. No snipe-backs.'
+          value: '1. No sniping within 15 minutes of a meeting.\n2. No sniping if a member location is revealed.\n3. No snipe-backs.\n4. No sniping in restrooms or inside apartments/dorm rooms.'
         },
         {
           name: '\u200B\nInvalidating a snipe',
@@ -208,7 +208,7 @@ client.on('messageCreate', async (message) => {
   if (message.content.startsWith('!leaderboard') || message.content.startsWith('!leader') || message.content.startsWith('!lb')) {
     // check if the leaderboard cache is empty
     if (Object.keys(leaderboardMemory.userPoints).length === 0) {
-      return message.channel.send("🔻 Memory error, please cache.");
+      return message.channel.send("🔻 Memory error.");
     }
 
     const notice = await message.channel.send('🔹 Generating...');
