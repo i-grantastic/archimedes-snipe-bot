@@ -133,7 +133,7 @@ async function getLeaderboard(stopDate, timeout) {
 
           if (snipedPairs[pairKey] === undefined && snipedPairs[pairKeyInv] === undefined) {
             snipedPairs[pairKey] = 1;
-          } else if (snipedPairs[pairKeyInv]) {
+          } else if (snipedPairs[pairKeyInv] !== undefined) {
             snipedPairs[pairKeyInv]++;
           } else {
             snipedPairs[pairKey]++;
