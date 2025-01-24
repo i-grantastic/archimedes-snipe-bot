@@ -328,7 +328,7 @@ client.on('messageCreate', async (message) => {
         const sniperShortName = sniper.displayName.split(' ')[0];
         const snipedShortName = sniped.displayName.split(' ')[0];
         const medal = medals[index] || `(${index+1})`;
-        leaderboard += `${medal} ${sniperShortName} → ${snipedShortName} (${count}) \n`;
+        leaderboard += `${medal} ${sniperShortName} ↔ ${snipedShortName} (${count}) \n`;
       };
 
       // create the EmbedBuilder
