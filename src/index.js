@@ -110,33 +110,57 @@ async function getLeaderboard(stopDate, timeout) {
       ) || msg.embeds.some(embed => embed.image || embed.thumbnail);
 
       if (hasImage && msg.mentions.users.size > 0) {
-        incrementPoints(msg.author.id, 'sniper');
+        try {
+          // check if member exists
+          const author = await msg.guild.members.fetch(msg.author.id);
 
-        const authorTeam = await getUserTeam(msg.author.id, msg.guild);
-        if (authorTeam && teamPoints[authorTeam]) {
-          teamPoints[authorTeam].sniper++;
+          // add points to user
+          incrementPoints(msg.author.id, 'sniper');
+
+          // add points to team
+          const authorTeam = await getUserTeam(msg.author.id, msg.guild);
+          if (authorTeam && teamPoints[authorTeam]) {
+            teamPoints[authorTeam].sniper++;
+          }
+        } catch(error) {
+          if (error.code === 10007) {
+            console.log(`User ${msg.author.id} has left the server, skipping...`);
+          } else {
+            console.error(`Error fetching user ${msg.author.id}:`, error);
+          }
         }
 
         msg.mentions.users.forEach(async user => {
-          // add points to user
-          incrementPoints(user.id, 'sniped');
+          try {
+            // check if member exists
+            const member = await msg.guild.members.fetch(user.id);
 
-          // add points to team
-          const mentionedTeam = await getUserTeam(user.id, msg.guild);
-          if (mentionedTeam && teamPoints[mentionedTeam]) {
-            teamPoints[mentionedTeam].sniped++;
-          }
+            // add points to user
+            incrementPoints(user.id, 'sniped');
 
-          // add points to duos
-          const pairKey = `${msg.author.id}:${user.id}`;
-          const pairKeyInv = `${user.id}:${msg.author.id}`;
+            // add points to team
+            const mentionedTeam = await getUserTeam(user.id, msg.guild);
+            if (mentionedTeam && teamPoints[mentionedTeam]) {
+              teamPoints[mentionedTeam].sniped++;
+            }
 
-          if (snipedPairs[pairKey] === undefined && snipedPairs[pairKeyInv] === undefined) {
-            snipedPairs[pairKey] = 1;
-          } else if (snipedPairs[pairKeyInv] !== undefined) {
-            snipedPairs[pairKeyInv]++;
-          } else {
-            snipedPairs[pairKey]++;
+            // add points to duos
+            const pairKey = `${msg.author.id}:${user.id}`;
+            const pairKeyInv = `${user.id}:${msg.author.id}`;
+
+            if (snipedPairs[pairKey] === undefined && snipedPairs[pairKeyInv] === undefined) {
+              snipedPairs[pairKey] = 1;
+            } else if (snipedPairs[pairKeyInv] !== undefined) {
+              snipedPairs[pairKeyInv]++;
+            } else {
+              snipedPairs[pairKey]++;
+            }
+          } catch(error) {
+            if (error.code === 10007) {
+              console.log(`User ${user.id} has left the server, skipping...`);
+            } else {
+              console.error(`Error fetching user ${user.id}:`, error);
+            }
           }
         });
       }
