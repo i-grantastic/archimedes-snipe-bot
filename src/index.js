@@ -4,7 +4,7 @@ const { Client, IntentsBitField, ActivityType, EmbedBuilder } = require('discord
 // inputs
 const channelId = '1169317299237433475'; // snipe channel ID
 const guildId = '1099834703130935296'; // archimedes server ID
-const startDate = new Date('2024-11-06T18:40:00-05:00'); // -5:00 for EST, start from this date
+const startDate = new Date('2025-04-28T12:30:00-05:00'); // -5:00 for EST, start from this date
 
 // initialize point tracking object
 const userPoints = {};
@@ -226,7 +226,7 @@ client.on('interactionCreate', async (interaction) => {
   
   // check if the leaderboard cache is empty
   if (Object.keys(leaderboardMemory.userPoints).length === 0) {
-    return await interaction.editReply("🔻 Memory error.");
+    return await interaction.editReply("💤 Leaderboards will return in the Fall");
   }
 
   const sortType = interaction.options.get('filter')?.value ?? 'sniper';
