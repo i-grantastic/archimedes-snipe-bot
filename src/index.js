@@ -226,7 +226,7 @@ client.on('interactionCreate', async (interaction) => {
   
   // check if the leaderboard cache is empty
   if (Object.keys(leaderboardMemory.userPoints).length === 0) {
-    return await interaction.editReply("💤 Leaderboards will return in the Fall");
+    return await interaction.editReply("⚠️ Memory is empty. Please ping a developer!");
   }
 
   const sortType = interaction.options.get('filter')?.value ?? 'sniper';
