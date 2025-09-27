@@ -4,7 +4,7 @@ const { Client, IntentsBitField, ActivityType, EmbedBuilder } = require('discord
 // inputs
 const channelId = '1169317299237433475'; // snipe channel ID
 const guildId = '1099834703130935296'; // archimedes server ID
-const startDate = new Date('2025-09-26T4:30:00-05:00'); // -5:00 for EST, start from this date
+const startDate = new Date('2025-09-26T04:30:00-05:00'); // -5:00 for EST, start from this date
 
 // initialize point tracking object
 const userPoints = {};
