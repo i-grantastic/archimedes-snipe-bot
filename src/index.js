@@ -344,7 +344,7 @@ client.on('interactionCreate', async (interaction) => {
       const sniperShortName = sniper.displayName.split(' ')[0];
       const snipedShortName = sniped.displayName.split(' ')[0];
       const medal = medals[index] || `(${index+1})`;
-      leaderboard += `${medal} ${sniper} ⇄ ${snipedShortName} (${count}) \n`;
+      leaderboard += `${medal} ${sniper} ⇄ ${sniped} (${count}) \n`;
     };
 
     // create the EmbedBuilder
@@ -358,7 +358,7 @@ client.on('interactionCreate', async (interaction) => {
       const user = await guild.members.fetch(userId);
       const medal = medals[index] || `(${index+1})`;
       const shortName = user.displayName.split(' ')[0];
-      leaderboard += `${medal} ${shortName} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
+      leaderboard += `${medal} ${user} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
     };
 
     // create the EmbedBuilder
