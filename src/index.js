@@ -48,8 +48,9 @@ async function getUserTeam(userID, guild) {
     }
 
     // define roles for each team
-    const leadershipRoles = ['President', 'Vice President', 'Secretary', 'Treasurer', 'Publicity', 'Recruiter', 'Advisor'];
+    const leadershipRoles = ['Executive Board', 'Officer', 'Advisor', 'Recruiter/Interviewer'];
     const teamRoles = ['Astra', 'Infinitum', 'Juvo', 'Terra'];
+    const alumniRoles = ['E-board Alumni', 'Astra Alumni', "Infinitum Alumni", "Juvo Alumni", "Terra Alumni"];
 
     // check for leadership roles first
     const hasLeadershipRole = member.roles.cache.some(role => leadershipRoles.includes(role.name));
@@ -57,7 +58,13 @@ async function getUserTeam(userID, guild) {
       return 'Leadership';
     }
 
-    // if not leadership, check for other team roles
+    // check for alumni roles second
+    const hasAlumniRole = member.roles.cache.some(role => alumniRoles.includes(role.name));
+    if (alumniRoles) {
+      return 'Alumni';
+    } 
+
+    // else check for other team roles
     const userRole = member.roles.cache.find(role => teamRoles.includes(role.name));
     return userRole ? userRole.name : null;
 
