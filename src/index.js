@@ -114,7 +114,10 @@ async function getLeaderboard(stopDate, timeout) {
 
       const hasImage = msg.attachments.some(attachment =>
         attachment.contentType && attachment.contentType.startsWith('image') && attachment.contentType !== 'image/gif'
-      ) || msg.embeds.some(embed => embed.image || embed.thumbnail);
+      ) || msg.embeds.some(embed =>
+        (embed.image && embed.image.url && !embed.image.url.endsWith('.gif')) ||
+        (embed.thumbnail && embed.thumbnail.url && !embed.thumbnail.url.endsWith('.gif'))
+      );
 
       if (hasImage && msg.mentions.users.size > 0) {
         try {
