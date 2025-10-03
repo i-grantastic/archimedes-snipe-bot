@@ -396,11 +396,13 @@ client.on('messageCreate', async (message) => {
     attachment.contentType && attachment.contentType.startsWith('image')
   ) || message.embeds.some(embed => embed.image || embed.thumbnail);
 
-  // check if there are no tagged users
-  const hasNoTaggedUser = message.mentions.users.size === 0;
+  // check if there are tagged users
+  const hasExplicitMention = [...msg.mentions.users.values()].some(user =>
+    msg.content.includes(`<@${user.id}>`) || msg.content.includes(`<@!${user.id}>`)
+  );
 
   // if there is an image and no tagged user, react
-  if (hasImage && hasNoTaggedUser) {
+  if (hasImage && !hasExplicitMention) {
     message.react('⚠️');
   }
 });
