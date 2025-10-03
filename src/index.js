@@ -112,18 +112,23 @@ async function getLeaderboard(stopDate, timeout) {
         return;
       }
 
-      
+      const hasExplicitMention = [...msg.mentions.users.values()].some(user =>
+        msg.content.includes(`<@${user.id}>`) || msg.content.includes(`<@!${user.id}>`)
+      );
+
       const hasImage = msg.attachments.some(attachment =>
         attachment.contentType && attachment.contentType.startsWith('image') && attachment.contentType !== 'image/gif'
       );
 
-      if (hasImage && msg.mentions.users.size > 0) {
+      if (hasImage && hasExplicitMention) {
         try {
           // check if member exists
           const author = await msg.guild.members.fetch(msg.author.id);
 
           // add points to user
-          incrementPoints(msg.author.id, 'sniper');
+          msg.mentions.users.forEach(() => {
+            incrementPoints(msg.author.id, 'sniper');
+          });
 
           // add points to team
           const authorTeam = await getUserTeam(msg.author.id, msg.guild);
