@@ -60,7 +60,7 @@ async function getUserTeam(userID, guild) {
 
     // check for alumni roles second
     const hasAlumniRole = member.roles.cache.some(role => alumniRoles.includes(role.name));
-    if (alumniRoles) {
+    if (hasAlumniRole) {
       return 'Alumni';
     } 
 
