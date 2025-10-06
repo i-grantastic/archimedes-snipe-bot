@@ -354,10 +354,10 @@ client.on('interactionCreate', async (interaction) => {
     for (const [index, { sniperId, snipedId, count }] of sortedUsers.entries()) {
       const sniper = await guild.members.fetch(sniperId);
       const sniped = await guild.members.fetch(snipedId);
-      const sniperDispName = sniper.displayName;
-      const snipedDispName = sniped.displayName;
-       if (sniperDispName.length > 15) sniperDispName = sniperDispName.slice(0, 13) + '...';
-       if (snipedDispName.length > 15) snipedDispName = snipedDispName.slice(0, 13) + '...';
+      let sniperDispName = sniper.displayName;
+      let snipedDispName = sniped.displayName;
+      if (sniperDispName.length > 15) sniperDispName = sniperDispName.slice(0, 13) + '...';
+      if (snipedDispName.length > 15) snipedDispName = snipedDispName.slice(0, 13) + '...';
       const medal = medals[index] || `(${index+1})`;
       leaderboard += `${medal} ${sniperDispName} ⇄ ${snipedDispName} (${count}) \n`;
     };
@@ -372,7 +372,7 @@ client.on('interactionCreate', async (interaction) => {
     for (const [index, [userId, points]] of sortedUsers.entries()) {
       const user = await guild.members.fetch(userId);
       const medal = medals[index] || `(${index+1})`;
-      const dispName = user.displayName;
+      let dispName = user.displayName;
       if (dispName.length > 17) dispName = dispName.slice(0, 15) + '...';
       leaderboard += `${medal} ${dispName} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
     };
