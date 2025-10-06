@@ -356,8 +356,8 @@ client.on('interactionCreate', async (interaction) => {
       const sniped = await guild.members.fetch(snipedId);
       const sniperDispName = sniper.displayName;
       const snipedDispName = sniped.displayName;
-       if (sniperDispName.length > 17) sniperDispName = sniperDispName.slice(0, 15) + '...';
-       if (snipedDispName.length > 17) snipedDispName = snipedDispName.slice(0, 15) + '...';
+       if (sniperDispName.length > 15) sniperDispName = sniperDispName.slice(0, 13) + '...';
+       if (snipedDispName.length > 15) snipedDispName = snipedDispName.slice(0, 13) + '...';
       const medal = medals[index] || `(${index+1})`;
       leaderboard += `${medal} ${sniperDispName} ⇄ ${snipedDispName} (${count}) \n`;
     };
