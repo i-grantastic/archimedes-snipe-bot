@@ -354,10 +354,12 @@ client.on('interactionCreate', async (interaction) => {
     for (const [index, { sniperId, snipedId, count }] of sortedUsers.entries()) {
       const sniper = await guild.members.fetch(sniperId);
       const sniped = await guild.members.fetch(snipedId);
-      const sniperShortName = sniper.displayName.split(' ')[0];
-      const snipedShortName = sniped.displayName.split(' ')[0];
+      const sniperDispName = sniper.displayName;
+      const snipedDispName = sniped.displayName;
+       if (sniperDispName.length > 17) sniperDispName = sniperDispName.slice(0, 15) + '...';
+       if (snipedDispName.length > 17) snipedDispName = snipedDispName.slice(0, 15) + '...';
       const medal = medals[index] || `(${index+1})`;
-      leaderboard += `${medal} ${sniper} ⇄ ${sniped} (${count}) \n`;
+      leaderboard += `${medal} ${sniperDispName} ⇄ ${snipedDispName} (${count}) \n`;
     };
 
     // create the EmbedBuilder
@@ -370,8 +372,9 @@ client.on('interactionCreate', async (interaction) => {
     for (const [index, [userId, points]] of sortedUsers.entries()) {
       const user = await guild.members.fetch(userId);
       const medal = medals[index] || `(${index+1})`;
-      const shortName = user.displayName.split(' ')[0];
-      leaderboard += `${medal} ${user} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
+      const dispName = user.displayName;
+      if (dispName.length > 17) dispName = dispName.slice(0, 15) + '...';
+      leaderboard += `${medal} ${dispName} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
     };
 
     // create the EmbedBuilder
