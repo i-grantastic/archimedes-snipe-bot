@@ -203,7 +203,7 @@ const client = new Client({
 })
 
 // activate bot
-client.on('ready', (c) => {
+client.on('clientReady', (c) => {
   console.log(`🟢 ${c.user.tag} online.`)
 
   client.user.setActivity({
@@ -397,8 +397,8 @@ client.on('messageCreate', async (message) => {
   ) || message.embeds.some(embed => embed.image || embed.thumbnail);
 
   // check if there are tagged users
-  const hasExplicitMention = [...msg.mentions.users.values()].some(user =>
-    msg.content.includes(`<@${user.id}>`) || msg.content.includes(`<@!${user.id}>`)
+  const hasExplicitMention = [...message.mentions.users.values()].some(user =>
+    message.content.includes(`<@${user.id}>`) || message.content.includes(`<@!${user.id}>`)
   );
 
   // if there is an image and no tagged user, react
